@@ -1,8 +1,15 @@
-
-
 class Point(object):
     def __init__(self, *coords):
         self.coords = tuple(float(i) for i in coords)
+
+    def as_tuple(self, xtransform=None, ytransform=None):
+        if xtransform is None and ytransform is None:
+            return self.coords
+        if ytransform is None:
+            return (xtransform(self.coords[0]), self.coords[1])
+        if xtransform is None:
+            return (self.coords[0], ytransform(self.coords[1]))
+        return (xtransform(self.coords[0]), ytransform(self.coords[1]))
 
     def __getitem__(self, n):
         return self.coords[n]
@@ -31,6 +38,25 @@ class Polygon(object):
         self.corners = corners
         self.color = color
         self.distance = distance
+
+    def rgb_color(self):
+        if self.color == "w":
+            return 100,100,100,"%"
+        if self.color == "k":
+            return 0,0,0,"%"
+        if self.color == "r":
+            return 0,0,0,"%"
+        if self.color == "g":
+            return 0,100,0,"%"
+        if self.color == "b":
+            return 0,100,0,"%"
+        if self.color == "c":
+            return 0,100,100,"%"
+        if self.color == "m":
+            return 100,0,100,"%"
+        if self.color == "y":
+            return 100,100,0,"%"
+
 
     def center(self):
         return Point(*[sum(p[i] for p in self.corners[:-1])/len(self.corners[:-1]) for i in range(3)])

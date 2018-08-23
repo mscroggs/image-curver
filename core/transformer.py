@@ -22,9 +22,9 @@ class Twister(object):
             xout = width/self.htwist * sin(self.htwist*xin/width)
             ymid = width/self.htwist * (1-cos(self.htwist*xin/width))
             zmid = yin
+
         if self.vtwist == 0:
             return Point(xout, ymid, zmid)
-
         yout = (ymid+height/self.vtwist) * cos(self.vtwist*zmid/height) - height/self.vtwist
         zout = (ymid+height/self.vtwist) * sin(self.vtwist*zmid/height)
         return Point(xout,yout,zout)
@@ -34,27 +34,39 @@ class Twister(object):
 # Project into 2D image and plot
 class Projector(object):
     def __init__(self):
-        pass
+        self._xlim = [None,None]
+        self._ylim = [None,None]
+
+    def set_limits(self, x=None, y=None):
+        if x is not None:
+            self._xlim = x
+        if y is not None:
+            self._ylim = y
 
     def project(self, polygons3d):
         return [self.project_polygon(polygon) for polygon in polygons3d]
 
     def project_polygon(self, polygon):
+        ## TODO: split into two polygons if it goes round the back
         from math import sqrt
         center = polygon.center()
         return Polygon([Point((x+y)*sqrt(3)/2,z+(y-x)/2) for x,y,z in polygon], color=polygon.color, distance=center[1]-center[0])
 
-    def project_and_plot(self, polygons3d,filename=None):
+    def project_and_plot(self, polygons3d,filename="output/output.png",height=None,width=None):
         polygons2d = self.project(polygons3d)
         polygons2d.sort(key=lambda x:-x.distance)
-        import matplotlib.pylab as plt
+
+        import svgwrite
+
+        size = (self._xlim[1]-self._xlim[0],self._ylim[1]-self._ylim[0])
+        dwg = svgwrite.Drawing("output/temp.svg", size=size)
         for polygon in polygons2d:
-            plt.fill([i[0] for i in polygon],[i[1] for i in polygon], polygon.color)
-        plt.axis("equal")
-        if filename is None:
-            plt.show()
-        else:
-            plt.savefig(filename)
-        plt.clf()
-
-
+            dwg.add(dwg.polygon([(i-(self._xlim[0],self._ylim[0])).as_tuple(ytransform=lambda y:size[1]-y) for i in polygon], fill=svgwrite.rgb(*polygon.rgb_color())))
+        dwg.save()
+        import cairosvg
+        scale = 1
+        if width is not None:
+            scale = max(1+int(width//size[0]),scale)
+        if height is not None:
+            scale = max(1+int(height//size[1]),scale)
+        cairosvg.svg2png(url='output/temp.svg', write_to=filename,parent_width=size[0],parent_height=size[1],scale=scale)
