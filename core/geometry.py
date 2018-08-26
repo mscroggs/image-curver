@@ -88,21 +88,40 @@ class Polygon(object):
         self.color = color
         self._front = front
 
+    def __len__(self):
+        return len(self.corners)
+
     def add_edge(self, edge):
         n = self.argmin(lambda x:norm(edge[0]-x))
         m = self.argmin(lambda x:norm(edge[-1]-x))
-        if m == n+1 or m == n+2:
+        if m in [n+1,n+2]:
             self.corners = self.corners[:m] + edge + self.corners[m:]
-        elif n == m+1 or n == m+2:
+        elif n in [m+1,m+2]:
             self.corners = self.corners[:n] + edge[::-1] + self.corners[n:]
-        elif n == 0:
+        elif n in [0,1]:
             self.corners = self.corners + edge[::-1]
-        elif m == 0:
+        elif m in [0,1]:
             self.corners = self.corners + edge
         else:
-            print("WARNING:",m,n)
-            print("WARNING:",len(edge))
-            raise ValueError
+            if n+1<len(self) and norm(edge[-1]-self[n+1]) < 3:
+                self.corners = self.corners[:n+1] + edge + self.corners[n+1:]
+            elif norm(edge[-1]-self[n-1]) < 3:
+                self.corners = self.corners[:n] + edge[::-1] + self.corners[n:]
+            elif m+1<len(self) and norm(edge[0]-self[m+1]) < 3:
+                self.corners = self.corners[:m-1] + edge[::-1] + self.corners[m-1:]
+            elif norm(edge[0]-self[m-1]) < 3:
+                self.corners = self.corners[:m] + edge + self.corners[m:]
+            elif n+2<len(self) and norm(edge[-1]-self[n+2]) < 3:
+                self.corners = self.corners[:n+2] + edge + self.corners[n+2:]
+            elif norm(edge[-1]-self[n-2]) < 3:
+                self.corners = self.corners[:n] + edge[::-1] + self.corners[n:]
+            elif m+2<len(self) and norm(edge[0]-self[m+2]) < 3:
+                self.corners = self.corners[:m-2] + edge[::-1] + self.corners[m-2:]
+            elif norm(edge[0]-self[m-2]) < 3:
+                self.corners = self.corners[:m] + edge + self.corners[m:]
+            else:
+                print("WARNING:",m,n)
+                pass #raise ValueError
 
     def point_pairs(self):
         return zip(self.corners[:-1],self.corners[1:])

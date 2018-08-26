@@ -153,8 +153,8 @@ class Projector(object):
                             if len(edge0) > 2:
                                 poly0.add_edge(edge0)
                         output.append(poly0)
+                        output[-1]._front = False
                     except ValueError:
-                        print(len(edge0))
                         print("0 missing")
                 if len(poly1) > 2:
                     poly1 = Polygon(poly1, color=polygon.color)
@@ -165,6 +165,7 @@ class Projector(object):
                             if len(edge1) > 2:
                                 poly1.add_edge(edge1)
                         output.append(poly1)
+                        output[-1]._front = True
                     except ValueError:
                         print("1 missing")
                 if len(poly2) > 2:
@@ -178,6 +179,7 @@ class Projector(object):
                             if len(edge3) > 2:
                                 poly2.add_edge(edge3)
                         output.append(poly2)
+                        output[-1]._front = False
                     except ValueError:
                         print("2 missing")
                 if len(poly3) > 2:
@@ -189,6 +191,7 @@ class Projector(object):
                             if len(edge3) > 2:
                                 poly3.add_edge(edge3)
                         output.append(poly3)
+                        output[-1]._front = True
                     except ValueError:
                         print("3 missing")
                 return output
