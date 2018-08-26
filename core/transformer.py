@@ -6,7 +6,17 @@ class Twister(object):
         self.vtwist = vtwist
 
     def twist_image(self, image):
-        return [self.twist_polygon(polygon, image.width, image.height) for polygon in image.polygons()]
+        from math import pi
+        return [self.twist_polygon(polygon, image.width, image.height) for polygon in image.polygons(
+                    htwist=self.htwist, vtwist=self.vtwist
+                  )]
+        #if self.htwist > 7*pi/4:
+        #if self.htwist > 3*pi/4:
+        #    return [self.twist_polygon(polygon, image.width, image.height) for polygon in image.polygons(
+        #                split_bg=image.width*3*pi/(4*self.htwist), vtwist=self.vtwist
+        #                )]
+        #else:
+        #    return [self.twist_polygon(polygon, image.width, image.height) for polygon in image.polygons(vtwist=self.vtwist)]
 
     def twist_polygon(self, polygon, width, height):
         return Polygon([self.twist_point(point, width, height) for point in polygon], color=polygon.color)
@@ -33,9 +43,23 @@ class Twister(object):
 
 # Project into 2D image and plot
 class Projector(object):
-    def __init__(self):
+    def __init__(self, h=None, v=None):
         self._xlim = [None,None]
         self._ylim = [None,None]
+        self.set_view_angle(h, v)
+
+    def set_view_angle(self, h=None, v=None):
+        from math import sqrt
+        if h is None:
+            self.h = Point(1/2, 1/2, 0)
+        else:
+            self.h = Point(h)
+        if v is None:
+            self.h = Point(-sqrt(3)/2, sqrt(3)/2, 1)
+        else:
+            self.v = Point(v)
+        self.z = self.v.cross(self.h)
+
 
     def set_limits(self, x=None, y=None):
         if x is not None:
@@ -47,20 +71,23 @@ class Projector(object):
         return [self.project_polygon(polygon) for polygon in polygons3d]
 
     def project_polygon(self, polygon):
-        ## TODO: split into two polygons if it goes round the back
         from math import sqrt
-        center = polygon.center()
-        return Polygon([Point((x+y)*sqrt(3)/2,z+(y-x)/2) for x,y,z in polygon], color=polygon.color, distance=center[1]-center[0])
+        return Polygon([Point((x+y)*sqrt(3)/2,z+(y-x)/2) for x,y,z in polygon],color=polygon.color, front=polygon.front())
 
     def project_and_plot(self, polygons3d,filename="output/output.png",height=None,width=None):
         polygons2d = self.project(polygons3d)
-        polygons2d.sort(key=lambda x:-x.distance)
 
         import svgwrite
 
         size = (self._xlim[1]-self._xlim[0],self._ylim[1]-self._ylim[0])
         dwg = svgwrite.Drawing("output/temp.svg", size=size)
+        front = []
         for polygon in polygons2d:
+            if polygon.front():
+                front.append(polygon)
+            else:
+                dwg.add(dwg.polygon([(i-(self._xlim[0],self._ylim[0])).as_tuple(ytransform=lambda y:size[1]-y) for i in polygon], fill=svgwrite.rgb(*polygon.rgb_color())))
+        for polygon in front:
             dwg.add(dwg.polygon([(i-(self._xlim[0],self._ylim[0])).as_tuple(ytransform=lambda y:size[1]-y) for i in polygon], fill=svgwrite.rgb(*polygon.rgb_color())))
         dwg.save()
         import cairosvg
