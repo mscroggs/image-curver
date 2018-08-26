@@ -153,7 +153,7 @@ class Polygon(object):
         if self.color == "g":
             return 0,100,0,"%"
         if self.color == "b":
-            return 0,100,0,"%"
+            return 0,0,100,"%"
         if self.color == "c":
             return 0,100,100,"%"
         if self.color == "m":

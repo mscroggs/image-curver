@@ -7,6 +7,17 @@ class Image(object):
         self.height = len(self.data)
         self.set_resolution(1)
         self.background = background
+        self.arrows = {"left":None,"right":None,"top":None,"bottom":None}
+
+    def add_arrows(self, left=None, right=None, top=None, bottom=None):
+        if left is not None:
+            self.arrows["left"] = left
+        if right is not None:
+            self.arrows["right"] = right
+        if top is not None:
+            self.arrows["top"] = top
+        if bottom is not None:
+            self.arrows["bottom"] = bottom
 
     def make_polygon(self, x, xwidth, y, ywidth, color=None, front=None):
         if color == None:
@@ -38,8 +49,36 @@ class Image(object):
         # Non-background coloured
         for i,line in enumerate(self.data[::-1]):
             for j,pixel in enumerate(line):
-                if pixel != self.background:
+                if i==0 or j==0 or i==self.height-1 or j==self.width-1:
+                    output.append(self.make_polygon(j,1,i,1,color="w"))
+                elif pixel != self.background:
                     output.append(self.make_polygon(j,1,i,1,color=pixel))
+        # arrows
+        asize = 1+min(self.height,self.width) // 8
+        if self.arrows["left"] == "up":
+            for i in range(asize):
+                output.append(self.make_polygon(self.width-(asize-i)/2,asize-i,(self.height-asize)//2+i,1, color="r"))
+        if self.arrows["left"] == "down":
+            for i in range(asize):
+                output.append(self.make_polygon(self.width-i/2,i,(self.height-asize)//2+i,1, color="r"))
+        if self.arrows["right"] == "up":
+            for i in range(asize):
+                output.append(self.make_polygon(-(asize-i)/2,asize-i,(self.height-asize)//2+i,1, color="r"))
+        if self.arrows["right"] == "down":
+            for i in range(asize):
+                output.append(self.make_polygon(-i/2,i,(self.height-asize)//2+i,1, color="r"))
+        if self.arrows["top"] == "right":
+            for i in range(asize):
+                output.append(self.make_polygon((self.width-asize)//6+i,1,-(asize-i)/2,asize-i, color="b"))
+        if self.arrows["top"] == "left":
+            for i in range(asize):
+                output.append(self.make_polygon((self.width-asize)//6+i,1,-i/2,i, color="b"))
+        if self.arrows["bottom"] == "right":
+            for i in range(asize):
+                output.append(self.make_polygon((self.width-asize)//6+i,1,self.height-(asize-i)/2,asize-i, color="b"))
+        if self.arrows["bottom"] == "left":
+            for i in range(asize):
+                output.append(self.make_polygon((self.width-asize)//6+i,1,self.height-i/2,i, color="b"))
         return output
 
     def set_resolution(self, resolution):
