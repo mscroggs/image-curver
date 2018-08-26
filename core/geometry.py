@@ -1,6 +1,41 @@
 class Point(object):
     def __init__(self, *coords):
         self.coords = tuple(float(i) for i in coords)
+        # TODO: take all this hacking out of point
+        self._twist = None
+        self._width = None
+        self._angle = None
+        self._resolution = None
+
+    def set_resolution(self, resolution):
+        self._resolution = resolution
+
+    def resolution(self):
+        return self._resolution
+
+    def set_twist(self, *twist):
+        self._twist = twist
+
+    def twist(self, n=None):
+        if n is None:
+            return self._twist
+        return self._twist[n]
+
+    def set_angle(self, *angle):
+        self._angle = angle
+
+    def angle(self, n=None):
+        if n is None:
+            return self._angle
+        return self._angle[n]
+
+    def set_width(self, *width):
+        self._width = width
+
+    def width(self, n=None):
+        if n is None:
+            return self._width
+        return self._width[n]
 
     def dot(self, other):
         return sum(i*j for i,j in zip(self,other))
@@ -53,6 +88,28 @@ class Polygon(object):
         self.color = color
         self._front = front
 
+    def add_edge(self, edge):
+        n = self.argmin(lambda x:norm(edge[0]-x))
+        m = self.argmin(lambda x:norm(edge[-1]-x))
+        if m == n+1 or m == n+2:
+            self.corners = self.corners[:m] + edge + self.corners[m:]
+        elif n == m+1 or n == m+2:
+            self.corners = self.corners[:n] + edge[::-1] + self.corners[n:]
+        elif n == 0:
+            self.corners = self.corners + edge[::-1]
+        elif m == 0:
+            self.corners = self.corners + edge
+        else:
+            print("WARNING:",m,n)
+            print("WARNING:",len(edge))
+            raise ValueError
+
+    def point_pairs(self):
+        return zip(self.corners[:-1],self.corners[1:])
+
+    def __getitem__(self, n):
+        return self.corners[n]
+
     def front(self):
         if self._front is not None:
             return self._front
@@ -62,9 +119,9 @@ class Polygon(object):
         return True
 
     def normal(self):
-        a = self.corners[0]
-        b = self.corners[2]
-        c = self.corners[-3]
+        a = self[0]
+        b = self[2]
+        c = self[-3]
         return (b-a).cross(c-a)
 
     def rgb_color(self):
@@ -86,10 +143,24 @@ class Polygon(object):
             return 100,100,0,"%"
 
     def min(self, f=norm):
-        return min(f(point.coords) for point in self.corners)
+        return min(f(point) for point in self.corners)
 
     def max(self, f=norm):
-        return max(f(point.coords) for point in self.corners)
+        return max(f(point) for point in self.corners)
+
+    def argmin(self, f=norm):
+        i,m = None,None
+        for p,point in enumerate(self.corners):
+            if m is None or f(point) < m:
+                i,m = p, f(point)
+        return i
+
+    def argmax(self, f=norm):
+        i,m = None,None
+        for p,point in enumerate(self.corners):
+            if m is None or f(point) > m:
+                i,m = p, f(point)
+        return i
 
     def center(self):
         return Point(*[sum(p[i] for p in self.corners[:-1])/len(self.corners[:-1]) for i in range(3)])
